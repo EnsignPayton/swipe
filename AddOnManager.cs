@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text.Json;
 
 namespace wowup;
@@ -77,10 +78,15 @@ public static class AddOnManager
             return;
         }
 
+        var fileName = await scraper.Download(entry, CachePath);
+        await using (var fs = File.OpenRead(Path.Combine(CachePath, fileName)))
+        using (var zipArchive = new ZipArchive(fs, ZipArchiveMode.Read))
+        {
+            zipArchive.ExtractToDirectory(config.AddOnsFolder, overwriteFiles: true);
+        }
+
         config.AddOns.Add(entry);
         SaveConfig(config);
-
-        var fileName = await scraper.Download(entry, CachePath);
         Console.WriteLine("{0} version {1} has been installed", entry.Name, entry.Version);
     }
 

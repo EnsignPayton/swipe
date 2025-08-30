@@ -40,17 +40,15 @@ public sealed class CurseScraper : IAsyncDisposable
         var response = await _page.GotoAsync($"https://www.curseforge.com/wow/addons/{name}/files");
         if (response!.Status == 404) return null;
 
-        var projectId = await _page.Locator(".project-id").InnerTextAsync();
         var table = _page.Locator(".files-table").First;
         var row1 = table.Locator(".file-row-details").First;
         var version = await row1.Locator(".name").InnerTextAsync();
         var link = await row1.GetAttributeAsync("href");
-        var downloadId = link!.Substring(link.LastIndexOf('/'));
+        var downloadId = link!.Substring(link.LastIndexOf('/') + 1);
 
         return new AddOnEntry
         {
             Name = name,
-            ProjectId = projectId,
             Version = version,
             VersionDownloadId = downloadId,
         };

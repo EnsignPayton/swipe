@@ -9,7 +9,7 @@ public class AppConfig
 public class AddOnEntry
 {
     public string Name { get; set; } = string.Empty;
-    public string ProjectId { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
     public string VersionDownloadId { get; set; } = string.Empty;
+    public List<string> InstalledFolders { get; set; } = [];
 }

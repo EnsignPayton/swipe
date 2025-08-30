@@ -82,6 +82,14 @@ public static class AddOnManager
         await using (var fs = File.OpenRead(Path.Combine(CachePath, fileName)))
         using (var zipArchive = new ZipArchive(fs, ZipArchiveMode.Read))
         {
+            foreach (var zipEntry in zipArchive.Entries)
+            {
+                if (zipEntry.Name.Length == 0 && zipEntry.FullName.IndexOf('/') == zipEntry.FullName.Length - 1)
+                {
+                    entry.InstalledFolders.Add(zipEntry.FullName.TrimEnd('/'));
+                }
+            }
+
             zipArchive.ExtractToDirectory(config.AddOnsFolder, overwriteFiles: true);
         }
 
@@ -93,18 +101,26 @@ public static class AddOnManager
     public static void Remove(string text)
     {
         var config = LoadConfig();
-    
+
         var entry = config.AddOns.FirstOrDefault(x => x.Name == text);
-        if (entry is not null)
-        {
-            config.AddOns.Remove(entry);
-            SaveConfig(config);
-            Console.WriteLine("{0} has been removed", text);
-        }
-        else
+        if (entry is null)
         {
             Console.WriteLine("{0} is not installed", text);
+            return;
         }
+
+        foreach (var folder in entry.InstalledFolders)
+        {
+            var path = Path.Combine(config.AddOnsFolder, folder);
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, recursive: true);
+            }
+        }
+
+        config.AddOns.Remove(entry);
+        SaveConfig(config);
+        Console.WriteLine("{0} has been removed", text);
     }
 
     private static AppConfig LoadConfig()

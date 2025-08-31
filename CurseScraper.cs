@@ -10,7 +10,6 @@ public sealed class CurseScraper : IAsyncDisposable
 
     public static async Task<CurseScraper> CreateAsync()
     {
-        Console.WriteLine("Initializing...");
         var playwright = await Playwright.CreateAsync();
         var browser = await playwright.Firefox.LaunchAsync(new BrowserTypeLaunchOptions
         {
@@ -34,9 +33,8 @@ public sealed class CurseScraper : IAsyncDisposable
         _playwright.Dispose();
     }
 
-    public async Task<AddOnEntry?> GetLatestInfo(string name)
+    public async Task<AddOnInfo?> GetLatestInfo(string name)
     {
-        Console.WriteLine("Loading information for {0}...", name);
         var response = await _page.GotoAsync($"https://www.curseforge.com/wow/addons/{name}/files");
         if (response!.Status == 404) return null;
 
@@ -44,22 +42,18 @@ public sealed class CurseScraper : IAsyncDisposable
         var row1 = table.Locator(".file-row-details").First;
         var version = await row1.Locator(".name").InnerTextAsync();
         var link = await row1.GetAttributeAsync("href");
-        var downloadId = link!.Substring(link.LastIndexOf('/') + 1);
+        var downloadId = int.Parse(link!.Substring(link.LastIndexOf('/') + 1));
 
-        return new AddOnEntry
-        {
-            Name = name,
-            Version = version,
-            VersionDownloadId = downloadId,
-        };
+        return new AddOnInfo(name, version, downloadId);
     }
 
-    public async Task<string> Download(AddOnEntry entry, string destination)
+    public async Task<string> Download(AddOnInfo value, string destination)
     {
-        Console.WriteLine("Downloading binary for {0}...", entry.Name);
         var download = await _page.RunAndWaitForDownloadAsync(() => _page.GotoAsync(
-            $"https://www.curseforge.com/wow/addons/{entry.Name}/download/{entry.VersionDownloadId}"));
+            $"https://www.curseforge.com/wow/addons/{value.Name}/download/{value.DownloadId}"));
         await download.SaveAsAsync(Path.Combine(destination, download.SuggestedFilename));
         return download.SuggestedFilename;
     }
 }
+
+public record AddOnInfo(string Name, string Version, int DownloadId);

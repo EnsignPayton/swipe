@@ -1,4 +1,5 @@
 ﻿using wowup;
+using wowup.Commands;
 
 if (args.Length == 0)
 {
@@ -14,25 +15,31 @@ if (args.Length == 0)
     return;
 }
 
+var configManager = new ConfigManager();
+configManager.Load();
+await using var db = new AddOnDatabase();
+await db.InitializeAsync();
+
 switch (args[0])
 {
     case "list":
-        AddOnManager.List();
+        await new ListAddOns(db, configManager.Config.AddOnsFolder).Execute();
         break;
     case "update":
         if (args.Length > 1)
         {
-            AddOnManager.Update(args[1]);
+            await new Update(db, configManager.Config.AddOnsFolder).Execute(args[1]);
         }
         else
         {
-            AddOnManager.UpdateAll();
+            // TODO: Update all
+            Console.WriteLine("Coming soon");
         }
         break;
     case "install":
         if (args.Length > 1)
         {
-            await AddOnManager.Install(args[1]);
+            await new Install(db, configManager.Config.AddOnsFolder).Execute(args[1]);
         }
         else
         {
@@ -42,7 +49,7 @@ switch (args[0])
     case "remove":
         if (args.Length > 1)
         {
-            AddOnManager.Remove(args[1]);
+            await new Remove(db, configManager.Config.AddOnsFolder).Execute(args[1]);
         }
         else
         {

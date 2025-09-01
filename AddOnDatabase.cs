@@ -16,6 +16,9 @@ public sealed class AddOnDatabase : IAsyncDisposable
 
     public async Task InitializeAsync()
     {
+        if (!Directory.Exists(Paths.Config))
+            Directory.CreateDirectory(Paths.Config);
+
         await _connection.OpenAsync();
         await _connection.ExecuteAsync("PRAGMA journal_mode=WAL");
         await _connection.ExecuteAsync(

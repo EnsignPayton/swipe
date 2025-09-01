@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using wowup;
 using wowup.Commands.AddOns;
+using wowup.Commands.Cache;
 using wowup.Commands.Games;
 
 await using var db = new AddOnDatabase();
@@ -12,6 +13,7 @@ return await new RootCommand("World of Warcraft AddOn Manager")
     verboseOption,
     BuildGames(),
     BuildAddOns(),
+    BuildCache(),
 }.Parse(args.Length > 0 ? args : ["-h"]).InvokeAsync();
 
 Command BuildGames()
@@ -196,5 +198,20 @@ Command BuildAddOns()
 
             return game;
         }
+    }
+}
+
+Command BuildCache()
+{
+    return new Command("cache", "Manage cache")
+    {
+        BuildClear(),
+    };
+
+    Command BuildClear()
+    {
+        var command = new Command("clear", "Remove all cached downloads");
+        command.SetAction(_ => ClearCache.Execute());
+        return command;
     }
 }

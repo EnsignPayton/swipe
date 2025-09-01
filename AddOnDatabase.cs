@@ -26,18 +26,18 @@ public sealed class AddOnDatabase : IAsyncDisposable
             CREATE TABLE IF NOT EXISTS game
             (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name VARCHAR UNIQUE,
-                path VARCHAR UNIQUE
+                name TEXT NOT NULL UNIQUE,
+                path TEXT NOT NULL UNIQUE
             );
 
             CREATE TABLE IF NOT EXISTS addon
             (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name VARCHAR,
-                version VARCHAR,
+                name TEXT NOT NULL,
+                version TEXT NOT NULL,
                 zipId INTEGER,
-                zipName VARCHAR,
-                zipHash VARCHAR,
+                zipName TEXT,
+                zipHash TEXT,
                 timestamp DATETIME DEFAULT current_timestamp,
                 UNIQUE (name, version)
             );
@@ -45,16 +45,16 @@ public sealed class AddOnDatabase : IAsyncDisposable
             CREATE TABLE IF NOT EXISTS addon_component
             (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                addonId INTEGER,
-                name VARCHAR,
+                addonId INTEGER NOT NULL,
+                name TEXT NOT NULL,
                 FOREIGN KEY (addonId) REFERENCES addon(id) ON DELETE CASCADE
             );
 
             CREATE TABLE IF NOT EXISTS game_addon
             (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                gameId INTEGER,
-                addonId INTEGER,
+                gameId INTEGER NOT NULL,
+                addonId INTEGER NOT NULL,
                 FOREIGN KEY (gameId) REFERENCES game(id) ON DELETE CASCADE,
                 FOREIGN KEY (addonId) REFERENCES addon(id) ON DELETE CASCADE,
                 UNIQUE (gameId, addonId)
@@ -63,8 +63,8 @@ public sealed class AddOnDatabase : IAsyncDisposable
             CREATE TABLE IF NOT EXISTS config
             (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                key VARCHAR UNIQUE,
-                value VARCHAR
+                key TEXT NOT NULL UNIQUE,
+                value TEXT
             )
             """);
     }

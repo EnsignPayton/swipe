@@ -11,7 +11,7 @@ public sealed class UpdateAllAddOns(AddOnDatabase db)
             return;
         }
 
-        var addons = await db.GetAddOns(game.Id);
+        var addons = await db.GetAddOns(game.Id, includeComponents: false);
         if (addons.Count == 0)
         {
             Print.Line("No installed addons", prefix: game.Name);

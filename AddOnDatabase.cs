@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 
 namespace wowup;
 
+[DapperAot]
 public sealed class AddOnDatabase : IAsyncDisposable
 {
     private const string CurrentGameKey = "current_game";
@@ -113,7 +114,7 @@ public sealed class AddOnDatabase : IAsyncDisposable
             "DELETE FROM game WHERE name = @name", new { name });
     }
 
-    public async Task<List<AddOn>> GetAddOns(int gameId)
+    public async Task<List<AddOn>> GetAddOns(int gameId, bool includeComponents)
     {
         var result = (await _connection.QueryAsync<AddOn>(
             """
@@ -134,18 +135,16 @@ public sealed class AddOnDatabase : IAsyncDisposable
             """, new { gameId })).ToList();
         if (result.Count == 0) return result;
 
-        var addonIds = result.Select(x => x.Id).ToList();
-        var components = await _connection.QueryAsync<AddOnComponent>(
-            "SELECT id, addonId, name FROM addon_component WHERE addonId IN @addonIds", new { addonIds });
-        var componentMap = components
-            .GroupBy(x => x.AddOnId)
-            .ToDictionary(x => x.Key, x => x.ToList());
-
-        foreach (var addon in result)
+        if (includeComponents)
         {
-            addon.Components = componentMap.GetValueOrDefault(addon.Id, []);
+            foreach (var addon in result)
+            {
+                var components = await _connection.QueryAsync<AddOnComponent>(
+                    "SELECT id, addonId, name FROM addon_component WHERE addonId = @addonId", new { addonId = addon.Id });
+                addon.Components = components.ToList();
+            }
         }
-        
+
         return result;
     }
 

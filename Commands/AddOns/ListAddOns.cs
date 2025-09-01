@@ -15,7 +15,7 @@ public sealed class ListAddOns(AddOnDatabase db)
             .Select(Path.GetFileName)
             .ToList();
 
-        var addons = await db.GetAddOns(game.Id);
+        var addons = await db.GetAddOns(game.Id, includeComponents: verbose);
 
         var installedAddons = addons
             .Where(x => x.Components.All(c => installedFolders.Contains(c.Name)))

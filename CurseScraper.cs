@@ -56,11 +56,11 @@ public sealed class CurseScraper : IAsyncDisposable
         return new AddOnInfo(name, version, downloadId);
     }
 
-    public async Task<string> Download(AddOnInfo value, string destination)
+    public async Task<string> Download(AddOnInfo value)
     {
         var download = await _page.RunAndWaitForDownloadAsync(() => _page.GotoAsync(
             $"https://www.curseforge.com/wow/addons/{value.Name}/download/{value.DownloadId}"));
-        await download.SaveAsAsync(Path.Combine(destination, download.SuggestedFilename));
+        await download.SaveAsAsync(Path.Combine(Paths.Cache, download.SuggestedFilename));
         return download.SuggestedFilename;
     }
 }

@@ -2,9 +2,6 @@ namespace wowup.Commands.AddOns;
 
 public sealed class UpdateAddOn(AddOnDatabase db)
 {
-    private static readonly string CachePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "wowup");
-
     public async Task Execute(Game game, string addonName, bool verbose)
     {
         var installDir = Path.Combine(game.Path, "Interface", "AddOns");
@@ -32,7 +29,7 @@ public sealed class UpdateAddOn(AddOnDatabase db)
 
         if (addon.Version == info.Version)
         {
-            var zipPath = Path.Combine(CachePath, addon.ZipName);
+            var zipPath = Path.Combine(Paths.Cache, addon.ZipName);
             if (File.Exists(zipPath))
             {
                 var hash = await Utils.HashFile(zipPath);
@@ -48,8 +45,8 @@ public sealed class UpdateAddOn(AddOnDatabase db)
         }
 
         Print.Temp($"{info.Name} {info.Version} downloading...", prefix: game.Name);
-        var zipName = await scraper.Download(info, CachePath);
-        var zipPath2 = Path.Combine(CachePath, zipName);
+        var zipName = await scraper.Download(info);
+        var zipPath2 = Path.Combine(Paths.Cache, zipName);
         var zipHash = await Utils.HashFile(zipPath2);
         Print.Temp($"{info.Name} {info.Version} installing...", prefix: game.Name);
         var components2 = await Utils.ApplyZip(zipPath2, installDir);

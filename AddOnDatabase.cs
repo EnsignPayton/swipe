@@ -6,13 +6,8 @@ namespace wowup;
 public sealed class AddOnDatabase : IAsyncDisposable
 {
     private const string CurrentGameKey = "current_game";
-    
-    private static readonly string Home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-    private static readonly string ConfigPath = Path.Combine(Home, ".config", "wowup");
-    private readonly SqliteConnection _connection = new(new SqliteConnectionStringBuilder
-    {
-        DataSource = Path.Combine(ConfigPath, "addons.db")
-    }.ConnectionString);
+
+    private readonly SqliteConnection _connection = new($"Data Source={Paths.Db}");
 
     public async ValueTask DisposeAsync()
     {

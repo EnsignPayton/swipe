@@ -6,10 +6,12 @@ using wowup.Commands.Games;
 await using var db = new AddOnDatabase();
 await db.InitializeAsync();
 
+var verboseOption = new Option<bool>("--verbose", "-v") { Recursive = true };
 return await new RootCommand("World of Warcraft AddOn Manager")
 {
+    verboseOption,
     BuildGames(),
-    BuildAddOns()
+    BuildAddOns(),
 }.Parse(args.Length > 0 ? args : ["-h"]).InvokeAsync();
 
 Command BuildGames()
@@ -102,9 +104,10 @@ Command BuildAddOns()
         var command = new Command("list", "List installed addons");
         command.SetAction(async pr =>
         {
+            var verbose = pr.GetValue(verboseOption);
             var game = await ResolveGame(pr);
             if (game is null) return;
-            await new ListAddOns(db).Execute(game);
+            await new ListAddOns(db).Execute(game, verbose);
         });
         return command;
     }

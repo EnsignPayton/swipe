@@ -17,7 +17,7 @@ public sealed class ListGames(AddOnDatabase db)
             foreach (var game in games)
             {
                 var pad = game.Id == current?.Id ? "*" : " ";
-                Console.WriteLine($"  {game.Name.PadRight(maxlen)}{pad}  {game.Path}");
+                Console.WriteLine($"{pad} {game.Name.PadRight(maxlen)}  {game.Path}");
             }
         }
     }

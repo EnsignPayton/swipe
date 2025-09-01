@@ -2,7 +2,7 @@ namespace wowup.Commands.AddOns;
 
 public sealed class ListAddOns(AddOnDatabase db)
 {
-    public async Task Execute(Game game)
+    public async Task Execute(Game game, bool verbose)
     {
         var installDir = Path.Combine(game.Path, "Interface", "AddOns");
         if (!Directory.Exists(installDir))
@@ -28,12 +28,19 @@ public sealed class ListAddOns(AddOnDatabase db)
         else
         {
             Console.WriteLine($"[{game.Name}] Installed AddOns:");
+            var maxlen = installedAddons.Max(x => x.Name.Length);
             foreach (var addon in installedAddons)
             {
-                Console.WriteLine($"  {addon.Name} {addon.Version}");
-                foreach (var component in addon.Components)
+                Console.WriteLine($"  {addon.Name.PadRight(maxlen)}  {addon.Version}");
+
+                if (verbose)
                 {
-                    Console.WriteLine($"    {component.Name}");
+                    foreach (var component in addon.Components)
+                    {
+                        Console.WriteLine($"    {component.Name}");
+                    }
+
+                    Console.WriteLine();
                 }
             }
         }

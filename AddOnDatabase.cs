@@ -5,6 +5,8 @@ namespace wowup;
 
 public sealed class AddOnDatabase : IAsyncDisposable
 {
+    private const string CurrentGameKey = "current_game";
+    
     private static readonly string Home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     private static readonly string ConfigPath = Path.Combine(Home, ".config", "wowup");
     private readonly SqliteConnection _connection = new(new SqliteConnectionStringBuilder
@@ -23,102 +25,146 @@ public sealed class AddOnDatabase : IAsyncDisposable
         await _connection.ExecuteAsync("PRAGMA journal_mode=WAL");
         await _connection.ExecuteAsync(
             """
-            CREATE TABLE IF NOT EXISTS installation
+            CREATE TABLE IF NOT EXISTS game
+            (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR UNIQUE,
+                path VARCHAR UNIQUE
+            );
+
+            CREATE TABLE IF NOT EXISTS addon
             (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name VARCHAR,
                 version VARCHAR,
+                zipId INTEGER,
+                zipName VARCHAR,
+                zipHash VARCHAR,
                 timestamp DATETIME DEFAULT current_timestamp,
-                zip_id INTEGER,
-                zip_name VARCHAR,
-                zip_hash VARCHAR,
                 UNIQUE (name, version)
             );
 
-            CREATE TABLE IF NOT EXISTS installation_content
+            CREATE TABLE IF NOT EXISTS addon_component
             (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                installation_id INTEGER,
-                dir_name VARCHAR,
-                FOREIGN KEY (installation_id) REFERENCES installation(id)
+                addonId INTEGER,
+                name VARCHAR,
+                FOREIGN KEY (addonId) REFERENCES addon(id) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS game_addon
+            (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                gameId INTEGER,
+                addonId INTEGER,
+                FOREIGN KEY (gameId) REFERENCES game(id) ON DELETE CASCADE,
+                FOREIGN KEY (addonId) REFERENCES addon(id) ON DELETE CASCADE,
+                UNIQUE (gameId, addonId)
+            );
+
+            CREATE TABLE IF NOT EXISTS config
+            (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                key VARCHAR UNIQUE,
+                value VARCHAR
+            )
             """);
     }
 
-    public async Task<Installation?> GetInstallation(AddOnKey key)
+    public async Task<List<Game>> GetAllGames()
     {
-        var result = await _connection.QueryFirstOrDefaultAsync<Installation>(
-            """
-            SELECT id as Id, name as Name, version as Version, zip_id as ZipId, zip_name as ZipName, zip_hash as ZipHash
-            FROM installation
-            WHERE name = @name AND version = @version
-            LIMIT 1
-            """, new { name = key.Name, version = key.Version });
-
-        if (result is null) return null;
-
-        var contents = await _connection.QueryAsync<InstallationContent>(
-            """
-            SELECT dir_name as DirName
-            FROM installation_content
-            WHERE installation_id = @id
-            """, new { id = result.Id });
-
-        result.Content = contents.ToList();
-        return result;
+        var result = await _connection.QueryAsync<Game>(
+            "SELECT id, name, path FROM game");
+        return result.ToList();
     }
 
-    public async Task<Installation?> GetLatestInstallation(string name)
-    {
-        var result = await _connection.QueryFirstOrDefaultAsync<Installation>(
+    public async Task<Game?> GetGame(string name) =>
+        await _connection.QueryFirstOrDefaultAsync<Game>(
+            "SELECT id, name, path FROM game WHERE name = @name LIMIT 1", new { name });
+
+    public async Task<Game?> GetCurrentGame() =>
+        await _connection.QueryFirstOrDefaultAsync<Game>(
             """
-            SELECT id as Id, name as Name, version as Version, zip_id as ZipId, zip_name as ZipName, zip_hash as ZipHash
-            FROM installation
-            WHERE name = @name
-            ORDER BY timestamp DESC
+            SELECT id, name, path
+            FROM game
+            WHERE name = (SELECT value FROM config WHERE key = @key LIMIT 1)
             LIMIT 1
-            """, new { name });
+            """, new { key = CurrentGameKey });
 
-        if (result is null) return null;
-
-        var contents = await _connection.QueryAsync<InstallationContent>(
+    public async Task AddGame(Game value)
+    {
+        await _connection.ExecuteAsync(
             """
-            SELECT dir_name as DirName
-            FROM installation_content
-            WHERE installation_id = @id
-            """, new { id = result.Id });
-
-        result.Content = contents.ToList();
-        return result;
+            INSERT INTO game(name, path) VALUES(@name, @path)
+            """, new { name = value.Name, path = value.Path });
     }
 
-    public async Task<List<Installation>> GetLatestInstallations()
+    public async Task SaveCurrentGame(string name)
     {
-        var result = (await _connection.QueryAsync<Installation>(
+        await _connection.ExecuteAsync(
             """
-            SELECT id as Id, name as Name, version as Version, zip_id as ZipId, zip_name as ZipName, zip_hash as ZipHash
-            FROM (
-                SELECT *, ROW_NUMBER() OVER (PARTITION BY name ORDER BY timestamp DESC) as row_num
-                FROM installation 
-            )
-            WHERE row_num = 1
-            """)).ToList();
+            INSERT INTO config(key, value)
+            VALUES(@key, @value)
+            ON CONFLICT DO UPDATE SET value = @value
+            """, new { key = CurrentGameKey, value = name });
+    }
 
-        foreach (var item in result)
+    public async Task DeleteGame(string name)
+    {
+        await _connection.ExecuteAsync(
+            "DELETE FROM game WHERE name = @name", new { name });
+    }
+
+    public async Task<List<AddOn>> GetAddOns(int gameId)
+    {
+        var result = (await _connection.QueryAsync<AddOn>(
+            """
+            SELECT id, name, version, zipId, zipName, zipHash
+            FROM addon
+            WHERE EXISTS(
+                SELECT 1
+                FROM game_addon
+                WHERE addonId = id AND gameId = @gameId)
+            """, new { gameId })).ToList();
+        if (result.Count == 0) return result;
+
+        var addonIds = result.Select(x => x.Id).ToList();
+        var components = await _connection.QueryAsync<AddOnComponent>(
+            "SELECT id, addonId, name FROM addon_component WHERE id IN @addonIds", new { addonIds });
+        var componentMap = components
+            .GroupBy(x => x.AddOnId)
+            .ToDictionary(x => x.Key, x => x.ToList());
+
+        foreach (var addon in result)
         {
-            var contents = await _connection.QueryAsync<InstallationContent>(
-                """
-                SELECT dir_name as DirName
-                FROM installation_content
-                WHERE installation_id = @id
-                """, new { id = item.Id });
-            item.Content = contents.ToList();
+            addon.Components = componentMap.GetValueOrDefault(addon.Id, []);
         }
+        
+        return result;
+    }
+
+    public async Task<AddOn?> GetAddOn(int gameId, string addonName)
+    {
+        var result = await _connection.QueryFirstOrDefaultAsync<AddOn>(
+            """
+            SELECT id, name, version, zipId, zipName, zipHash
+            FROM addon
+            WHERE name = @addonName AND EXISTS(
+                SELECT 1
+                FROM game_addon
+                WHERE addonId = id AND gameId = @gameId)
+            LIMIT 1
+            """, new { gameId, addonName });
+        if (result is null) return result;
+
+        var components = await _connection.QueryAsync<AddOnComponent>(
+            "SELECT id, addonId, name FROM addon_component WHERE id = @id", new { id = result.Id });
+        result.Components = components.ToList();
 
         return result;
     }
 
-    public async Task SaveInstallation(Installation value)
+    public async Task SaveAddOn(int gameId, AddOn value)
     {
         await using var tran = await _connection.BeginTransactionAsync();
 
@@ -126,37 +172,38 @@ public sealed class AddOnDatabase : IAsyncDisposable
         {
             await _connection.ExecuteAsync(
                 """
-                INSERT INTO installation(name, version, zip_id, zip_name, zip_hash)
-                VALUES(@name, @version, @zip_id, @zip_name, @zip_hash)
-                ON CONFLICT DO UPDATE SET zip_id = @zip_id, zip_name = @zip_name, zip_hash = @zip_hash
+                INSERT INTO addon(name, version, zipId, zipName, zipHash)
+                VALUES(@name, @version, @zipId, @zipName, @zipHash)
+                ON CONFLICT (name, version) DO NOTHING
                 """,
                 new
                 {
                     name = value.Name, version = value.Version,
-                    zip_id = value.ZipId, zip_name = value.ZipName, zip_hash = value.ZipHash
+                    zipId = value.ZipId, zipName = value.ZipName, zipHash = value.ZipHash
                 });
 
-            var id = await _connection.QueryFirstOrDefaultAsync<int>(
-                """
-                SELECT id
-                FROM installation
-                WHERE name = @name AND version = @version
-                """, new { name = value.Name, version = value.Version });
+            var addonId = await _connection.QueryFirstOrDefaultAsync<int>(
+                "SELECT id FROM addon WHERE name = @name AND version = @version LIMIT 1",
+                new { name = value.Name, version = value.Version });
 
             await _connection.ExecuteAsync(
-                """
-                DELETE FROM installation_content
-                WHERE installation_id = @id
-                """, new { id });
+                "DELETE FROM addon_component WHERE addonId = @addonId", new { addonId });
 
-            if (value.Content.Count > 0)
+            if (value.Components.Count > 0)
             {
                 await _connection.ExecuteAsync(
                     """
-                    INSERT INTO installation_content(installation_id, dir_name)
-                    VALUES(@id, @dir_name)
-                    """, value.Content.Select(x => new { id, dir_name = x.DirName }));
+                    INSERT INTO addon_component(addonId, name)
+                    VALUES(@addonId, @name)
+                    """, value.Components.Select(x => new { addonId, name = x.Name }));
             }
+
+            await _connection.ExecuteAsync(
+                """
+                INSERT INTO game_addon(gameId, addonId)
+                VALUES(@gameId, @addonId)
+                ON CONFLICT (gameId, addonId) DO NOTHING
+                """, new { gameId, addonId });
 
             await tran.CommitAsync();
         }
@@ -168,20 +215,28 @@ public sealed class AddOnDatabase : IAsyncDisposable
     }
 }
 
-public record AddOnKey(string Name, string Version);
-
-public class Installation
+public class Game
 {
-    public int? Id { get; set; }
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Path { get; set; } = string.Empty;
+}
+
+public class AddOn
+{
+    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
     public int ZipId { get; set; }
     public string ZipName { get; set; } = string.Empty;
     public string ZipHash { get; set; } = string.Empty;
-    public List<InstallationContent> Content { get; set; } = [];
+
+    public List<AddOnComponent> Components { get; set; } = [];
 }
 
-public class InstallationContent
+public class AddOnComponent
 {
-    public string DirName { get; set; } = string.Empty;
+    public int Id { get; set; }
+    public int AddOnId { get; set; }
+    public string Name { get; set; } = string.Empty;
 }

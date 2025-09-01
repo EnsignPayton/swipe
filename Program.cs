@@ -1,62 +1,42 @@
-﻿using wowup;
+﻿using System.CommandLine;
+using wowup;
 using wowup.Commands;
 
-if (args.Length == 0)
-{
-    Console.WriteLine("wowup {0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
-    Console.WriteLine();
-    Console.WriteLine("Usage: wowup [command]");
-    Console.WriteLine();
-    Console.WriteLine("Commands:");
-    Console.WriteLine("  list     List all installed addons");
-    Console.WriteLine("  update   Update a single addon or all installed addons");
-    Console.WriteLine("  install  Install a new addon");
-    Console.WriteLine("  remove   Remove an installed addon");
-    return;
-}
-
-var configManager = new ConfigManager();
-configManager.Load();
 await using var db = new AddOnDatabase();
 await db.InitializeAsync();
 
-switch (args[0])
+return await new RootCommand
 {
-    case "list":
-        await new ListAddOns(db, configManager.Config.AddOnsFolder).Execute();
-        break;
-    case "update":
-        if (args.Length > 1)
+    Subcommands =
+    {
+        new Command("game", "Manage game installations")
         {
-            await new Update(db, configManager.Config.AddOnsFolder).Execute(args[1]);
-        }
-        else
+            Subcommands =
+            {
+                ListGames.BuildCommand(db),
+                AddGame.BuildCommand(db),
+                RemoveGame.BuildCommand(db),
+                SetGame.BuildCommand(db),
+                ScanGames.BuildCommand(db),
+            }
+        },
+        new Command("addon", "Manage addons")
         {
-            // TODO: Update all
-            Console.WriteLine("Coming soon");
-        }
-        break;
-    case "install":
-        if (args.Length > 1)
-        {
-            await new Install(db, configManager.Config.AddOnsFolder).Execute(args[1]);
-        }
-        else
-        {
-            Console.WriteLine("Usage: wowup install [addon]");
-        }
-        break;
-    case "remove":
-        if (args.Length > 1)
-        {
-            await new Remove(db, configManager.Config.AddOnsFolder).Execute(args[1]);
-        }
-        else
-        {
-            Console.WriteLine("Usage: wowup remove [addon]");
-        }
-        break;
-    default:
-        Console.WriteLine("Unknown command: {0}", args[0]);
-        break;
-}
+            Options = 
+            {
+                new Option<string>("--game", "-g")
+                {
+                    Description = "Target a specific game",
+                    Recursive = true,
+                }
+            },
+            Subcommands =
+            {
+                ListAddOns.BuildCommand(db),
+                InstallAddOn.BuildCommand(db),
+                RemoveAddOn.BuildCommand(db),
+                UpdateAddOn.BuildCommand(db),
+            }
+        },
+    }
+}.Parse(args).InvokeAsync();

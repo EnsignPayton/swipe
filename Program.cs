@@ -82,6 +82,12 @@ Command BuildGames()
 
 Command BuildAddOns()
 {
+    var gameOption = new Option<string>("--game", "-g")
+    {
+        Description = "Target a specific game",
+        Recursive = true,
+    };
+    
     return new Command("addon", "Manage addons")
     {
         BuildList(),
@@ -95,7 +101,7 @@ Command BuildAddOns()
         var command = new Command("list", "List installed addons");
         command.SetAction(async pr =>
         {
-            var game = await Utils.ResolveGame(db, pr);
+            var game = await ResolveGame(pr);
             if (game is null) return;
             await new ListAddOns(db).Execute(game);
         });
@@ -110,7 +116,7 @@ Command BuildAddOns()
         command.SetAction(async pr =>
         {
             var addonName = pr.GetRequiredValue(nameArg);
-            var game = await Utils.ResolveGame(db, pr);
+            var game = await ResolveGame(pr);
             if (game is null) return;
             await new InstallAddOn(db).Execute(game, addonName);
         });
@@ -125,7 +131,7 @@ Command BuildAddOns()
         command.SetAction(async pr =>
         {
             var addonName = pr.GetRequiredValue(nameArg);
-            var game = await Utils.ResolveGame(db, pr);
+            var game = await ResolveGame(pr);
             if (game is null) return;
             await new UpdateAddOn(db).Execute(game, addonName);
         });
@@ -140,10 +146,35 @@ Command BuildAddOns()
         command.SetAction(async pr =>
         {
             var addonName = pr.GetRequiredValue(nameArg);
-            var game = await Utils.ResolveGame(db, pr);
+            var game = await ResolveGame(pr);
             if (game is null) return;
             await new RemoveAddOn(db).Execute(game, addonName);
         });
         return command;
+    }
+
+    async Task<Game?> ResolveGame(ParseResult pr)
+    {
+        var gameName = pr.GetValue(gameOption);
+        if (gameName is null)
+        {
+            var game = await db.GetCurrentGame();
+            if (game is null)
+            {
+                Console.WriteLine("No game set as current");
+            }
+
+            return game;
+        }
+        else
+        {
+            var game = await db.GetGame(gameName);
+            if (game is null)
+            {
+                Console.WriteLine($"Game {gameName} not found.");
+            }
+
+            return game;
+        }
     }
 }

@@ -30,6 +30,8 @@ public sealed class RemoveAddOn(AddOnDatabase db)
             }
         }
 
+        await db.UnlinkAddOn(game.Id, addon.Id);
+
         Console.WriteLine($"[{game.Name}] {addonName} uninstalled.");
     }
 }

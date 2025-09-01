@@ -119,18 +119,26 @@ public sealed class AddOnDatabase : IAsyncDisposable
     {
         var result = (await _connection.QueryAsync<AddOn>(
             """
+            WITH game_addons AS (
+                SELECT a.*
+                FROM addon a
+                JOIN game_addon ga ON ga.addonId = a.id
+                WHERE ga.gameId = @gameId
+            ),
+            ranked_addons AS (
+                SELECT *,
+                       ROW_NUMBER() OVER (PARTITION BY name ORDER BY timestamp DESC) AS rn
+                FROM game_addons
+            )
             SELECT id, name, version, zipId, zipName, zipHash
-            FROM addon
-            WHERE EXISTS(
-                SELECT 1
-                FROM game_addon
-                WHERE addonId = id AND gameId = @gameId)
+            FROM ranked_addons
+            WHERE rn = 1;
             """, new { gameId })).ToList();
         if (result.Count == 0) return result;
 
         var addonIds = result.Select(x => x.Id).ToList();
         var components = await _connection.QueryAsync<AddOnComponent>(
-            "SELECT id, addonId, name FROM addon_component WHERE id IN @addonIds", new { addonIds });
+            "SELECT id, addonId, name FROM addon_component WHERE addonId IN @addonIds", new { addonIds });
         var componentMap = components
             .GroupBy(x => x.AddOnId)
             .ToDictionary(x => x.Key, x => x.ToList());
@@ -212,6 +220,13 @@ public sealed class AddOnDatabase : IAsyncDisposable
             await tran.RollbackAsync();
             throw;
         }
+    }
+
+    public async Task UnlinkAddOn(int gameId, int addonId)
+    {
+        await _connection.ExecuteAsync(
+            "DELETE FROM game_addon WHERE gameId = @gameId AND addonId = @addonId",
+            new { gameId, addonId });
     }
 }
 

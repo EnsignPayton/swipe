@@ -93,6 +93,7 @@ Command BuildAddOns()
         BuildList(),
         BuildInstall(),
         BuildUpdate(),
+        BuildUpdateAll(),
         BuildRemove(),
     };
 
@@ -134,6 +135,18 @@ Command BuildAddOns()
             var game = await ResolveGame(pr);
             if (game is null) return;
             await new UpdateAddOn(db).Execute(game, addonName);
+        });
+        return command;
+    }
+
+    Command BuildUpdateAll()
+    {
+        var command = new Command("update-all", "Update all addons");
+        command.SetAction(async pr =>
+        {
+            var game = await ResolveGame(pr);
+            if (game is null) return;
+            await new UpdateAllAddOns(db).Execute(game);
         });
         return command;
     }

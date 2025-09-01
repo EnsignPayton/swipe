@@ -1,17 +1,8 @@
-using System.CommandLine;
-
-namespace wowup.Commands;
+namespace wowup.Commands.Games;
 
 public sealed class ListGames(AddOnDatabase db)
 {
-    public static Command BuildCommand(AddOnDatabase db)
-    {
-        var command = new Command("list", "List registered games");
-        command.SetAction(async _ => await new ListGames(db).Execute());
-        return command;
-    }
-
-    private async Task Execute()
+    public async Task Execute()
     {
         var games = await db.GetAllGames();
         if (games.Count == 0)

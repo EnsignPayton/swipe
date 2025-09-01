@@ -26,7 +26,7 @@ public static class Utils
             .Select(x => x.FullName.TrimEnd('/'))
             .ToList();
     }
-    
+
     public static async Task<Game?> ResolveGame(AddOnDatabase db, ParseResult pr)
     {
         var gameName = pr.GetValue<string>("--game");

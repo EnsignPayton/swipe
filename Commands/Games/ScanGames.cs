@@ -1,18 +1,10 @@
-using System.CommandLine;
 using System.Diagnostics;
 
-namespace wowup.Commands;
+namespace wowup.Commands.Games;
 
 public sealed class ScanGames(AddOnDatabase db)
 {
-    public static Command BuildCommand(AddOnDatabase db)
-    {
-        var command = new Command("scan", "Scan file system for games");
-        command.SetAction(async _ => await new ScanGames(db).Execute());
-        return command;
-    }
-    
-    private async Task Execute()
+    public async Task Execute()
     {
         Console.WriteLine("Scanning...");
         var gamePaths = SearchFileSystem();

@@ -1,22 +1,8 @@
-using System.CommandLine;
-
-namespace wowup.Commands;
+namespace wowup.Commands.AddOns;
 
 public sealed class ListAddOns(AddOnDatabase db)
 {
-    public static Command BuildCommand(AddOnDatabase db)
-    {
-        var command = new Command("list", "List installed addons");
-        command.SetAction(async pr =>
-        {
-            var game = await Utils.ResolveGame(db, pr);
-            if (game is null) return;
-            await new ListAddOns(db).Execute(game);
-        });
-        return command;
-    }
-
-    private async Task Execute(Game game)
+    public async Task Execute(Game game)
     {
         var installDir = Path.Combine(game.Path, "Interface", "AddOns");
         if (!Directory.Exists(installDir))

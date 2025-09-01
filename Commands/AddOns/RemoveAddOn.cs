@@ -1,25 +1,8 @@
-using System.CommandLine;
-
-namespace wowup.Commands;
+namespace wowup.Commands.AddOns;
 
 public sealed class RemoveAddOn(AddOnDatabase db)
 {
-    public static Command BuildCommand(AddOnDatabase db)
-    {
-        var command = new Command("remove", "Remove an addon");
-        var nameArg = new Argument<string>("name") { Description = "Name of addon" };
-        command.Arguments.Add(nameArg);
-        command.SetAction(async pr =>
-        {
-            var addonName = pr.GetRequiredValue(nameArg);
-            var game = await Utils.ResolveGame(db, pr);
-            if (game is null) return;
-            await new RemoveAddOn(db).Execute(game, addonName);
-        });
-        return command;
-    }
-
-    private async Task Execute(Game game, string addonName)
+    public async Task Execute(Game game, string addonName)
     {
         var installDir = Path.Combine(game.Path, "Interface", "AddOns");
         if (!Directory.Exists(installDir))

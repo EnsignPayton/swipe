@@ -5,36 +5,36 @@ public sealed class UpdateAllAddOns(AddOnDatabase db)
     private static readonly string CachePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "wowup");
 
-    public async Task Execute(Game game)
+    public async Task Execute(Game game, bool verbose)
     {
         var installDir = Path.Combine(game.Path, "Interface", "AddOns");
         if (!Directory.Exists(installDir))
         {
-            Console.WriteLine($"[{game.Name}] AddOns folder not found at {installDir}");
+            Print.Line($"AddOns folder not found at {installDir}", prefix: game.Name);
             return;
         }
 
         var addons = await db.GetAddOns(game.Id);
         if (addons.Count == 0)
         {
-            Console.WriteLine($"[{game.Name}] No installed addons.");
+            Print.Line("No installed addons", prefix: game.Name);
             return;
         }
 
-        Console.WriteLine($"[{game.Name}] loading addons...");
+        Print.Line("Loading addons...", prefix: game.Name);
         await using var scraper = await CurseScraper.CreateAsync();
         foreach (var addon in addons)
         {
-            await Update(game, addon, installDir, scraper);
+            await Update(game, addon, installDir, scraper, verbose);
         }
     }
 
-    private async Task Update(Game game, AddOn addon, string installDir, CurseScraper scraper)
+    private async Task Update(Game game, AddOn addon, string installDir, CurseScraper scraper, bool verbose)
     {
         var info = await scraper.GetLatestInfo(addon.Name);
         if (info is null)
         {
-            Console.WriteLine($"[{game.Name}] {addon.Name} not found.");
+            Print.Line($"{addon.Name} not found", prefix: game.Name);
             return;
         }
 
@@ -46,24 +46,20 @@ public sealed class UpdateAllAddOns(AddOnDatabase db)
                 var hash = await Utils.HashFile(zipPath);
                 if (hash == addon.ZipHash)
                 {
-                    Console.WriteLine($"[{game.Name}] {addon.Name} {addon.Version} is cached, installing...");
+                    Print.Temp($"{info.Name} {info.Version} is cached, installing...", prefix: game.Name);
                     var components = await Utils.ApplyZip(zipPath, installDir);
-                    Console.WriteLine($"[{game.Name}] {addon.Name} {addon.Version} installed");
-                    foreach (var component in components)
-                    {
-                        Console.WriteLine($"  {component}");
-                    }
-
+                    Print.Line($"{info.Name} {info.Version} installed", prefix: game.Name);
+                    if (verbose) Print.List(components);
                     return;
                 }
             }
         }
 
-        Console.WriteLine($"[{game.Name}] {addon.Name} {info.Version} downloading...");
+        Print.Temp($"{info.Name} {info.Version} downloading...", prefix: game.Name);
         var zipName = await scraper.Download(info, CachePath);
         var zipPath2 = Path.Combine(CachePath, zipName);
         var zipHash = await Utils.HashFile(zipPath2);
-        Console.WriteLine($"[{game.Name}] {addon.Name} {info.Version} installing...");
+        Print.Temp($"{info.Name} {info.Version} installing...", prefix: game.Name);
         var components2 = await Utils.ApplyZip(zipPath2, installDir);
 
         await db.SaveAddOn(game.Id, new AddOn
@@ -76,10 +72,7 @@ public sealed class UpdateAllAddOns(AddOnDatabase db)
             Components = components2.Select(x => new AddOnComponent { Name = x }).ToList(),
         });
 
-        Console.WriteLine($"[{game.Name}] {addon.Name} {info.Version} installed.");
-        foreach (var component in components2)
-        {
-            Console.WriteLine($"  {component}");
-        }
+        Print.Line($"{info.Name} {info.Version} installed", prefix: game.Name);
+        if (verbose) Print.List(components2);
     }
 }

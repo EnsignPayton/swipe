@@ -7,7 +7,7 @@ public sealed class ListAddOns(AddOnDatabase db)
         var installDir = Path.Combine(game.Path, "Interface", "AddOns");
         if (!Directory.Exists(installDir))
         {
-            Console.WriteLine($"[{game.Name}] AddOns folder not found at {installDir}");
+            Print.Line($"AddOns folder not found at {installDir}", prefix: game.Name);
             return;
         }
 
@@ -23,25 +23,16 @@ public sealed class ListAddOns(AddOnDatabase db)
 
         if (installedAddons.Count == 0)
         {
-            Console.WriteLine($"[{game.Name}] No installed addons.");
+            Print.Line("No installed addons.", prefix: game.Name);
         }
         else
         {
-            Console.WriteLine($"[{game.Name}] Installed AddOns:");
+            Print.Line("Installed addons:", prefix: game.Name);
             var maxlen = installedAddons.Max(x => x.Name.Length);
             foreach (var addon in installedAddons)
             {
-                Console.WriteLine($"  {addon.Name.PadRight(maxlen)}  {addon.Version}");
-
-                if (verbose)
-                {
-                    foreach (var component in addon.Components)
-                    {
-                        Console.WriteLine($"    {component.Name}");
-                    }
-
-                    Console.WriteLine();
-                }
+                Print.Line($"  {addon.Name.PadRight(maxlen)}  {addon.Version}");
+                if (verbose) Print.List(addon.Components.Select(x => x.Name), indent: 4);
             }
         }
     }

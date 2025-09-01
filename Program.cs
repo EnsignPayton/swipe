@@ -119,10 +119,11 @@ Command BuildAddOns()
         command.Arguments.Add(nameArg);
         command.SetAction(async pr =>
         {
+            var verbose = pr.GetValue(verboseOption);
             var addonName = pr.GetRequiredValue(nameArg);
             var game = await ResolveGame(pr);
             if (game is null) return;
-            await new InstallAddOn(db).Execute(game, addonName);
+            await new InstallAddOn(db).Execute(game, addonName, verbose);
         });
         return command;
     }
@@ -134,10 +135,11 @@ Command BuildAddOns()
         command.Arguments.Add(nameArg);
         command.SetAction(async pr =>
         {
+            var verbose = pr.GetValue(verboseOption);
             var addonName = pr.GetRequiredValue(nameArg);
             var game = await ResolveGame(pr);
             if (game is null) return;
-            await new UpdateAddOn(db).Execute(game, addonName);
+            await new UpdateAddOn(db).Execute(game, addonName, verbose);
         });
         return command;
     }
@@ -147,9 +149,10 @@ Command BuildAddOns()
         var command = new Command("update-all", "Update all addons");
         command.SetAction(async pr =>
         {
+            var verbose = pr.GetValue(verboseOption);
             var game = await ResolveGame(pr);
             if (game is null) return;
-            await new UpdateAllAddOns(db).Execute(game);
+            await new UpdateAllAddOns(db).Execute(game, verbose);
         });
         return command;
     }
@@ -161,10 +164,11 @@ Command BuildAddOns()
         command.Arguments.Add(nameArg);
         command.SetAction(async pr =>
         {
+            var verbose = pr.GetValue(verboseOption);
             var addonName = pr.GetRequiredValue(nameArg);
             var game = await ResolveGame(pr);
             if (game is null) return;
-            await new RemoveAddOn(db).Execute(game, addonName);
+            await new RemoveAddOn(db).Execute(game, addonName, verbose);
         });
         return command;
     }

@@ -2,23 +2,23 @@ namespace wowup.Commands.AddOns;
 
 public sealed class RemoveAddOn(AddOnDatabase db)
 {
-    public async Task Execute(Game game, string addonName)
+    public async Task Execute(Game game, string addonName, bool verbose)
     {
         var installDir = Path.Combine(game.Path, "Interface", "AddOns");
         if (!Directory.Exists(installDir))
         {
-            Console.WriteLine($"[{game.Name}] AddOns folder not found at {installDir}");
+            Print.Line($"AddOns folder not found at {installDir}", prefix: game.Name);
             return;
         }
 
         var addon = await db.GetAddOn(game.Id, addonName);
         if (addon is null)
         {
-            Console.WriteLine($"[{game.Name}] {addonName} is not installed.");
+            Print.Line($"{addonName} is not installed", prefix: game.Name);
             return;
         }
 
-        Console.WriteLine($"[{game.Name}] {addonName} uninstalling...");
+        Print.Temp($"{addonName} uninstalling...", prefix: game.Name);
 
         foreach (var component in addon.Components)
         {
@@ -32,6 +32,7 @@ public sealed class RemoveAddOn(AddOnDatabase db)
 
         await db.UnlinkAddOn(game.Id, addon.Id);
 
-        Console.WriteLine($"[{game.Name}] {addonName} uninstalled.");
+        Print.Line($"{addonName} uninstalled", prefix: game.Name);
+        if (verbose) Print.List(addon.Components.Select(x => x.Name));
     }
 }

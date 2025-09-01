@@ -24,18 +24,18 @@ public sealed class AddGame(AddOnDatabase db)
     {
         if (!Directory.Exists(path))
         {
-            Console.WriteLine("Directory {0} not found.", path);
+            Console.WriteLine($"Directory {path} not found.");
             return;
         }
 
         var existing = await db.GetGame(name);
         if (existing is not null)
         {
-            Console.WriteLine("Game {0} already exists at {1}", name, existing.Path);
+            Console.WriteLine($"Game {name} already exists at {existing.Path}");
             return;
         }
 
         await db.AddGame(new Game { Name = name, Path = path });
-        Console.WriteLine("Game {0} added at {1}", name, path);
+        Console.WriteLine($"Game {name} added at {path}");
     }
 }

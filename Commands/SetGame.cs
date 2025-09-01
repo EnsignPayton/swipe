@@ -22,11 +22,11 @@ public sealed class SetGame(AddOnDatabase db)
         var game = await db.GetGame(name);
         if (game is null)
         {
-            Console.WriteLine("Game {0} is not registered.", game);
+            Console.WriteLine($"Game {game} is not registered.");
             return;
         }
 
         await db.SaveCurrentGame(name);
-        Console.WriteLine("Game {0} set as current.", name);
+        Console.WriteLine($"Game {name} set as current.");
     }
 }

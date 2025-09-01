@@ -31,7 +31,7 @@ public sealed class ScanGames(AddOnDatabase db)
             var maxlen = registered.Max(x => x.Name.Length);
             foreach (var game in games.Where(x => gamePaths.Contains(x.Path)))
             {
-                Console.WriteLine("  {0}  {1}", game.Name.PadRight(maxlen), game.Path);
+                Console.WriteLine($"  {game.Name.PadRight(maxlen)}  {game.Path}");
             }
 
             Console.WriteLine();
@@ -43,7 +43,7 @@ public sealed class ScanGames(AddOnDatabase db)
             Console.WriteLine("Unregistered Games:");
             foreach (var path in unregistered)
             {
-                Console.WriteLine("  {0}", path);
+                Console.WriteLine($"  {path}");
             }
         }
     }

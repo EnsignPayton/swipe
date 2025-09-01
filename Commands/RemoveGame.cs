@@ -22,11 +22,11 @@ public sealed class RemoveGame(AddOnDatabase db)
         var existing = await db.GetGame(name);
         if (existing is null)
         {
-            Console.WriteLine("Game {0} is not registered.", name);
+            Console.WriteLine($"Game {name} is not registered.");
             return;
         }
 
         await db.DeleteGame(name);
-        Console.WriteLine("Game {0} removed", name);
+        Console.WriteLine($"Game {name} removed");
     }
 }

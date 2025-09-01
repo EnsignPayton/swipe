@@ -9,38 +9,11 @@ public sealed class ListAddOns(AddOnDatabase db)
         var command = new Command("list", "List installed addons");
         command.SetAction(async pr =>
         {
-            var gameName = pr.GetValue<string>("--game");
-            var target = new ListAddOns(db);
-            if (gameName is null)
-                await target.Execute();
-            else
-                await target.Execute(gameName);
+            var game = await Utils.ResolveGame(db, pr);
+            if (game is null) return;
+            await new ListAddOns(db).Execute(game);
         });
         return command;
-    }
-    
-    private async Task Execute()
-    {
-        var game = await db.GetCurrentGame();
-        if (game is null)
-        {
-            Console.WriteLine("No game set as current.");
-            return;
-        }
-
-        await Execute(game);
-    }
-
-    private async Task Execute(string gameName)
-    {
-        var game = await db.GetGame(gameName);
-        if (game is null)
-        {
-            Console.WriteLine("No game set as current.");
-            return;
-        }
-
-        await Execute(game);
     }
 
     private async Task Execute(Game game)

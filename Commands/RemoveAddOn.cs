@@ -11,39 +11,12 @@ public sealed class RemoveAddOn(AddOnDatabase db)
         command.Arguments.Add(nameArg);
         command.SetAction(async pr =>
         {
-            var gameName = pr.GetValue<string>("--game");
             var addonName = pr.GetRequiredValue(nameArg);
-            var target = new RemoveAddOn(db);
-            if (gameName is null)
-                await target.Execute(addonName);
-            else
-                await target.Execute(gameName, addonName);
+            var game = await Utils.ResolveGame(db, pr);
+            if (game is null) return;
+            await new RemoveAddOn(db).Execute(game, addonName);
         });
         return command;
-    }
-
-    private async Task Execute(string addonName)
-    {
-        var game = await db.GetCurrentGame();
-        if (game is null)
-        {
-            Console.WriteLine("No game set as current.");
-            return;
-        }
-
-        await Execute(game, addonName);
-    }
-
-    private async Task Execute(string gameName, string addonName)
-    {
-        var game = await db.GetGame(gameName);
-        if (game is null)
-        {
-            Console.WriteLine("No game set as current.");
-            return;
-        }
-
-        await Execute(game, addonName);
     }
 
     private async Task Execute(Game game, string addonName)

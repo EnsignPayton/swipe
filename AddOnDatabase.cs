@@ -3,7 +3,6 @@ using Microsoft.Data.Sqlite;
 
 namespace wowup;
 
-[DapperAot]
 public sealed class AddOnDatabase : IAsyncDisposable
 {
     private const string CurrentGameKey = "current_game";

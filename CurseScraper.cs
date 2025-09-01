@@ -10,11 +10,20 @@ public sealed class CurseScraper : IAsyncDisposable
 
     public static async Task<CurseScraper> CreateAsync()
     {
+        var browserOptions = new BrowserTypeLaunchOptions { Headless = true };
+
         var playwright = await Playwright.CreateAsync();
-        var browser = await playwright.Firefox.LaunchAsync(new BrowserTypeLaunchOptions
+
+        IBrowser browser;
+        try
         {
-            Headless = true,
-        });
+            browser = await playwright.Firefox.LaunchAsync(browserOptions);
+        }
+        catch (PlaywrightException)
+        {
+            Microsoft.Playwright.Program.Main(["install", "firefox"]);
+            browser = await playwright.Firefox.LaunchAsync(browserOptions);
+        }
 
         var page = await browser.NewPageAsync();
         return new CurseScraper(playwright, browser, page);

@@ -87,7 +87,7 @@ Command BuildAddOns()
         Description = "Target a specific game",
         Recursive = true,
     };
-    
+
     return new Command("addon", "Manage addons")
     {
         BuildList(),

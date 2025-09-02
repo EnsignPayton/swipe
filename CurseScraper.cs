@@ -26,6 +26,7 @@ public sealed class CurseScraper : IAsyncDisposable
         }
 
         var page = await browser.NewPageAsync();
+        page.SetDefaultTimeout(120_000);
         return new CurseScraper(playwright, browser, page);
     }
 
@@ -35,7 +36,7 @@ public sealed class CurseScraper : IAsyncDisposable
         _browser = browser;
         _page = page;
     }
-    
+
     public async ValueTask DisposeAsync()
     {
         await _browser.DisposeAsync();

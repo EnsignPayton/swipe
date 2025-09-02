@@ -13,7 +13,8 @@ jobs:
     - uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
-    - run: ./deploy.sh
+    - run: dotnet publish -c Release --self-contained
     - uses: actions/upload-artifact@v4
       with:
-        path: bin/wowup.tar.gz
+        name: wowup
+        path: bin/Release/net9.0/linux-x64/publish/*

@@ -1,0 +1,19 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+    - run: ./deploy.sh
+    - uses: actions/upload-artifact@v4
+      with:
+        path: bin/wowup.tar.gz

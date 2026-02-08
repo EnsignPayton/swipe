@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 
-namespace wowup;
+namespace Swipe;
 
 public static class Utils
 {

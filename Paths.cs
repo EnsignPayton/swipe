@@ -1,4 +1,4 @@
-namespace wowup;
+namespace Swipe;
 
 public static class Paths
 {

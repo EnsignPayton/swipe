@@ -16,5 +16,5 @@ jobs:
     - run: dotnet publish -c Release --self-contained
     - uses: actions/upload-artifact@v6
       with:
-        name: wowup
+        name: swipe
         path: bin/Release/net9.0/linux-x64/publish/*

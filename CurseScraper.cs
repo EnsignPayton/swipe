@@ -1,6 +1,6 @@
 using Microsoft.Playwright;
 
-namespace wowup;
+namespace Swipe;
 
 public sealed class CurseScraper : IAsyncDisposable
 {

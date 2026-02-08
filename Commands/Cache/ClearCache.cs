@@ -1,4 +1,4 @@
-namespace wowup.Commands.Cache;
+namespace Swipe.Commands.Cache;
 
 public static class ClearCache
 {

@@ -1,4 +1,4 @@
-namespace wowup.Commands.Games;
+namespace Swipe.Commands.Games;
 
 public sealed class AddGame(AddOnDatabase db)
 {
@@ -17,7 +17,7 @@ public sealed class AddGame(AddOnDatabase db)
             return;
         }
 
-        await db.AddGame(new wowup.Game { Name = name, Path = path });
+        await db.AddGame(new Swipe.Game { Name = name, Path = path });
         Console.WriteLine($"Game {name} added at {path}");
     }
 }

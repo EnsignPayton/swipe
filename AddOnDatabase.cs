@@ -1,7 +1,7 @@
 using Dapper;
 using Microsoft.Data.Sqlite;
 
-namespace wowup;
+namespace Swipe;
 
 public sealed class AddOnDatabase : IAsyncDisposable
 {

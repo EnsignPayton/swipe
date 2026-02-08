@@ -1,4 +1,4 @@
-namespace wowup.Commands.AddOns;
+namespace Swipe.Commands.AddOns;
 
 public sealed class RemoveAddOn(AddOnDatabase db)
 {

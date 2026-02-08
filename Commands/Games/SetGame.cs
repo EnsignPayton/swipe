@@ -1,4 +1,4 @@
-namespace wowup.Commands.Games;
+namespace Swipe.Commands.Games;
 
 public sealed class SetGame(AddOnDatabase db)
 {

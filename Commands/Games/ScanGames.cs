@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace wowup.Commands.Games;
+namespace Swipe.Commands.Games;
 
 public sealed class ScanGames(AddOnDatabase db)
 {

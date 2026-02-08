@@ -1,8 +1,8 @@
 ﻿using System.CommandLine;
-using wowup;
-using wowup.Commands.AddOns;
-using wowup.Commands.Cache;
-using wowup.Commands.Games;
+using Swipe;
+using Swipe.Commands.AddOns;
+using Swipe.Commands.Cache;
+using Swipe.Commands.Games;
 
 await using var db = new AddOnDatabase();
 await db.InitializeAsync();

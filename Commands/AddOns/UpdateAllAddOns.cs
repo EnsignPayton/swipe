@@ -43,9 +43,9 @@ public sealed class UpdateAllAddOns(AddOnDatabase db)
                 var hash = await Utils.HashFile(zipPath);
                 if (hash == addon.ZipHash)
                 {
-                    Print.Temp($"{info.Name} {info.Version} is cached, installing...", prefix: game.Name);
+                    Print.Temp($"{info.Name} {info.Version} is cached, restoring...", prefix: game.Name);
                     var components = await Utils.ApplyZip(zipPath, installDir);
-                    Print.Line($"{info.Name} {info.Version} installed", prefix: game.Name);
+                    Print.Line($"{info.Name} {info.Version} restored from cache", prefix: game.Name);
                     if (verbose) Print.List(components);
                     return;
                 }

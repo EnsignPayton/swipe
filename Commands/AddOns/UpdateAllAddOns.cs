@@ -19,19 +19,21 @@ public sealed class UpdateAllAddOns(AddOnDatabase db)
         }
 
         Print.Line("Loading addons...", prefix: game.Name);
+        var maxlen = addons.Max(x => x.Name.Length);
+	var verlen = addons.Max(x => x.Version.Length);
         await using var scraper = await CurseScraper.CreateAsync();
         foreach (var addon in addons)
         {
-            await Update(game, addon, installDir, scraper, verbose);
+            await Update(game, addon, installDir, scraper, verbose, maxlen, verlen);
         }
     }
 
-    private async Task Update(Game game, AddOn addon, string installDir, CurseScraper scraper, bool verbose)
+    private async Task Update(Game game, AddOn addon, string installDir, CurseScraper scraper, bool verbose, int maxlen, int verlen)
     {
         var info = await scraper.GetLatestInfo(addon.Name);
         if (info is null)
         {
-            Print.Line($"{addon.Name} not found", prefix: game.Name);
+            Print.Line($"{addon.Name.PadRight(maxlen)}  not found", prefix: game.Name);
             return;
         }
 
@@ -43,20 +45,20 @@ public sealed class UpdateAllAddOns(AddOnDatabase db)
                 var hash = await Utils.HashFile(zipPath);
                 if (hash == addon.ZipHash)
                 {
-                    Print.Temp($"{info.Name} {info.Version} is cached, restoring...", prefix: game.Name);
+                    Print.Temp($"{info.Name.PadRight(maxlen)}  {info.Version.PadRight(verlen)}  is cached, restoring...", prefix: game.Name);
                     var components = await Utils.ApplyZip(zipPath, installDir);
-                    Print.Line($"{info.Name} {info.Version} restored from cache", prefix: game.Name);
+                    Print.Line($"{info.Name.PadRight(maxlen)}  {info.Version.PadRight(verlen)}  restored from cache", prefix: game.Name);
                     if (verbose) Print.List(components);
                     return;
                 }
             }
         }
 
-        Print.Temp($"{info.Name} {info.Version} downloading...", prefix: game.Name);
+        Print.Temp($"{info.Name.PadRight(maxlen)}  {info.Version.PadRight(verlen)}  downloading...", prefix: game.Name);
         var zipName = await scraper.Download(info);
         var zipPath2 = Path.Combine(Paths.Cache, zipName);
         var zipHash = await Utils.HashFile(zipPath2);
-        Print.Temp($"{info.Name} {info.Version} installing...", prefix: game.Name);
+        Print.Temp($"{info.Name.PadRight(maxlen)}  {info.Version.PadRight(verlen)}  installing...", prefix: game.Name);
         var components2 = await Utils.ApplyZip(zipPath2, installDir);
 
         await db.SaveAddOn(game.Id, new AddOn
@@ -69,7 +71,7 @@ public sealed class UpdateAllAddOns(AddOnDatabase db)
             Components = components2.Select(x => new AddOnComponent { Name = x }).ToList(),
         });
 
-        Print.Line($"{info.Name} {info.Version} installed", prefix: game.Name);
+        Print.Line($"{info.Name.PadRight(maxlen)}  {info.Version.PadRight(verlen)}  installed", prefix: game.Name);
         if (verbose) Print.List(components2);
     }
 }

@@ -24,7 +24,14 @@ public sealed class UpdateAllAddOns(AddOnDatabase db)
         await using var scraper = await CurseScraper.CreateAsync();
         foreach (var addon in addons)
         {
-            await Update(game, addon, installDir, scraper, verbose, maxlen, verlen);
+		try
+		{
+		    await Update(game, addon, installDir, scraper, verbose, maxlen, verlen);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("[ERR] Update Failed for {0}: {1}", addon.Name, ex.Message);
+		}
         }
     }
 

@@ -18,7 +18,9 @@ public sealed class RemoveAddOn(AddOnDatabase db)
             return;
         }
 
-        Print.Temp($"{addonName} uninstalling...", prefix: game.Name);
+	if (verbose) Console.WriteLine("\n{0}", System.Text.Json.JsonSerializer.Serialize(addon));
+
+        Print.Line($"{addonName} uninstalling...", prefix: game.Name);
 
         foreach (var component in addon.Components)
         {
@@ -30,7 +32,8 @@ public sealed class RemoveAddOn(AddOnDatabase db)
             }
         }
 
-        await db.UnlinkAddOn(game.Id, addon.Id);
+        // await db.UnlinkAddOn(game.Id, addonName);
+	await db.ForceDeleteAddOn(addonName);
 
         Print.Line($"{addonName} uninstalled", prefix: game.Name);
         if (verbose) Print.List(addon.Components.Select(x => x.Name));

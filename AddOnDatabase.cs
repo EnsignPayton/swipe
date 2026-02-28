@@ -162,7 +162,7 @@ public sealed class AddOnDatabase : IAsyncDisposable
         if (result is null) return result;
 
         var components = await _connection.QueryAsync<AddOnComponent>(
-            "SELECT id, addonId, name FROM addon_component WHERE id = @id", new { id = result.Id });
+            "SELECT id, addonId, name FROM addon_component WHERE addonId = @id", new { id = result.Id });
         result.Components = components.ToList();
 
         return result;
@@ -223,6 +223,54 @@ public sealed class AddOnDatabase : IAsyncDisposable
         await _connection.ExecuteAsync(
             "DELETE FROM game_addon WHERE gameId = @gameId AND addonId = @addonId",
             new { gameId, addonId });
+    }
+
+    public async Task UnlinkAddOn(int gameId, string addonName)
+    {
+	await _connection.ExecuteAsync(
+		"""
+		DELETE FROM game_addon
+		WHERE gameId = @gameId
+		AND addonId = (
+			SELECT id
+			FROM addon
+			WHERE name = @addonName
+		)
+		""",
+		new { gameId, addonName });
+    }
+
+    public async Task ForceDeleteAddOn(string addonName)
+    {
+	await _connection.ExecuteAsync(
+		"""
+		DELETE FROM game_addon
+		WHERE addonId = (
+			SELECT id
+			FROM addon
+			WHERE name = @addonName
+		)
+		""",
+		new { addonName });
+
+	await _connection.ExecuteAsync(
+		"""
+		DELETE FROM addon_component
+		WHERE addonId = (
+			SELECT id
+			FROM addon
+			WHERE name = @addonName
+		)
+		""",
+		new { addonName });
+
+	await _connection.ExecuteAsync(
+		"""
+		DELETE
+		FROM addon
+		WHERE name = @addonName
+		""",
+		new { addonName });
     }
 }
 

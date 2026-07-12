@@ -48,10 +48,10 @@ public sealed class CurseScraper : IAsyncDisposable
             new() { Timeout = 10_000 });
         if (response!.Status == 404) return null;
 
-        var table = _page.Locator(".files-table").First;
-        var row1 = table.Locator(".file-row-details").First;
+        var table = _page.Locator(".files-table-card").First;
+        var row1 = table.Locator(".file-row-summary").First;
         var version = await row1.Locator(".name").InnerTextAsync();
-        var link = await row1.GetAttributeAsync("href");
+        var link = await row1.Locator(".file-download-button").GetAttributeAsync("href");
         var downloadId = int.Parse(link!.Substring(link.LastIndexOf('/') + 1));
 
         return new AddOnInfo(name, version, downloadId);
